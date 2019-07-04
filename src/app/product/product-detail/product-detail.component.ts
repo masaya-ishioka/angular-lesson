@@ -10,7 +10,7 @@ import { ActivatedRoute, Params } from '@angular/router';
 })
 export class ProductDetailComponent implements OnInit {
 
-  product: Product = null;
+  product: Product;
 
   constructor(
   	private productService: ProductService,
@@ -18,6 +18,7 @@ export class ProductDetailComponent implements OnInit {
   	) { }
 
   ngOnInit() {
+    this.product = new Product(null, null, null, null);
     this.route.params.subscribe((params: Params) => {
       this.productService.get(params['id']).subscribe((product: Product) => {
          this.product =  product

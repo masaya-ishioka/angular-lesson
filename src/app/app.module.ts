@@ -10,7 +10,6 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
 import { ProductNewComponent } from './product/product-new/product-new.component';
 import { HeroGetComponent } from './heros/hero-get/hero-get.component';
-import { HeroShowComponent } from './heros/hero-show/hero-show.component';
 import { HeroFightComponent } from './heros/hero-fight/hero-fight.component';
 import { HeroSetComponent } from './heros/hero-set/hero-set.component';
 import { HeroIndexComponent } from './heros/hero-index/hero-index.component';
@@ -23,7 +22,6 @@ import { HeroIndexComponent } from './heros/hero-index/hero-index.component';
     ProductEditComponent,
     ProductNewComponent,
     HeroGetComponent,
-    HeroShowComponent,
     HeroFightComponent,
     HeroSetComponent,
     HeroIndexComponent,
