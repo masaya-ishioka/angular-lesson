@@ -1,0 +1,942 @@
+Angularのメモ
+
+ng new angular-sample
+
+src ソースコードを配置するディレクトリ
+
+e2e e2e(end to end)テスト(実際にブラウザを動かしてページのテストを行うもの)のコードを配置するディレクトリ
+
+node_modules nodeのモジュールが置かれる。
+
+よく使うのはsrc
+
+[srcのディレクトリ説明]
+
+app アプリケーションのソースコードを配置する
+
+assets　画像などの静的ファイルを配置する
+
+environments　開発環境と本番環境などの環境ごとに変動させたい値を格納する
+
+app.component.ts　作成されたプロジェクトの起点となるファイル
+
+
+「コンポーネントの基礎」
+
+変更するのは３つのファイル
+
+src/app/app.component.ts
+
+src/app/app.component.html
+
+src/app/app.component.css
+
+Angularではこの３つのファイルを１セットで変更を加えていく
+
+
+app.componet.tsについて
+
+@Component({
+  selector: 'app-root',
+  templateUrl: './app.component.html',
+  styleUrls: ['./app.component.css']
+})
+
+selector　このコンポーネントがHTMLから参照されるときのタグ名
+
+templateUrl　このファイルのHTMLへのパス
+
+styleUrls このファイルのCSSへのパス
+
+
+「コンポーネントの追加」
+np g component ディレクトリ/コンポーネント名
+
+
+「ルーティングファイルの作成」
+
+ルーティングファイルはAngularにおけるUrlとコンポーネントの対応を定義するファイル
+src/app/app-routing.module.ts
+
+import { NgModule } from '@angular/core';
+import { Routes, RouterModule } from '@angular/router';
+import { ProductListComponent } from './product/product-list/product-list.component';
+import { ProductDetailComponent } from './product/product-detail/product-detail.component';
+
+const routes: Routes = [
+	{ path: 'products', component: ProductListComponent},
+	{ path: 'products/:id', component: ProductDetailComponent },
+	{ path: '', redirectTo: '/products', pathMatch: 'prefix'  },
+];
+
+@NgModule({
+  imports: [RouterModule.forRoot(routes)],
+  exports: [RouterModule]
+})
+export class AppRoutingModule { }
+
+const routes: Routesについての解説
+
+{ path: 'products', component: ProductListComponet },
+
+まずこの場合は「localhost:4200/products」というパスが「ProductListComponent」にマッピングされていることを指す。
+
+{ path: 'products/:id', component: ProductDetailComponent },
+
+この場合「localhost:4200/products/***」を「ProductDetailComponent」にマッピングする。
+上記の:idはコンポーネントからパラメータを取得できる
+
+{ path: '', redirectTo: '/products', pathMatch: 'prefix'  },
+
+この場合、pathが上記の２つ以外は「/products」へリダイレクトされることを示す。
+
+pathMatchは[full]と[prefix]のどちらかを指定することができる。
+
+[full]の場合はpathと完全一致したとき
+
+[prefix]の場合はpathで始まる値ときとなる。
+
+
+「ルーティングを有効な状態にする」
+
+現状まだルーティングは有効になっていない。
+app-routing.module.tsがどこからも参照されていないため
+
+app.module.tsから参照する。
+このプロジェクトのモジュール群を管理しているapp.module.tsにapp-routing.module.tsと追加する。
+（自分が試したときは「ルーティングを有効な状態にする」をやらなくてもデフォルトでなっていた。）
+
+「ページ間リンク」
+<div class="button" routerLink="/pruducts">
+	商品一覧へ
+</div>
+<div class="button" [routerLink]="['/products', 'test']">
+	商品詳細へ
+</div>
+
+<a>要素も使えるがAngularでは非推薦linkを使いたい場合はrouterLinkを使用する。
+上記ではrouterLinkと[routerLink]の二つの使い方が書かれている。
+[]で囲った属性はAngularでは要素に対してJavaScriptの要素を入力するという意味になる。
+
+[routerLink]は配列を受け取ります。配列の要素は、ルーティングの階層を表している。
+
+[routerLink]の使いどころ
+同じなのになぜこの様な書き方をするのか？
+今回は決まった値を入れたがリンクの内容をTypescript上で計算された値を入れたいときには、この書き方が有用になる。
+＊idなど変化する値
+
+「Angularでのデータ管理の基礎」
+Anugularプロジェクト内で共通認識を行うためにモデルファイルを作成する。
+今回は
+src/app/shared/models
+に保存する。
+（どこに置かなければならないという規則はない）
+
+src/app/shared/models/product.ts
+export class Product {
+	id: number;
+	name: string;
+	price: number;
+	description: string;
+
+	constructor(id, name,price, description) {
+		this.id = id;
+		this.name = name;
+		this.price = price;
+		this.description = description;
+	}
+}
+
+この様に共通で使えるファイルに商品（product）モデルを定義することで、このプロジェクト内で商品の共通認識が作れた。
+Typescriptなのでjavascriptしか知らない場合は少し違和感があると思われる。
+
+「コンポーネントからモデルを利用する」
+product-detail.component.ts
+
+import { Component, OnInit } from '@angular/core';
+import { Product } from '../../shared/models/product';
+
+@Component({
+  selector: 'app-product-detail',
+  templateUrl: './product-detail.component.html',
+  styleUrls: ['./product-detail.component.scss'],
+})
+export class ProductDetailComponent implements OnInit {
+  product: Product;
+
+  constructor() { }
+
+  ngOnInit() {
+    this.product = new Product(1, 'Angular入門書「天地創造の章」', 3800, '神は云った。「Angularあれ」。するとAngularが出来た。');
+  }
+
+}
+
+product-detail.component.html
+
+<div class="container">
+  <div class="title">商品詳細</div>
+  <div class="product-detail-container">
+    <div class="param-line">
+      <div class="label">ID</div>
+      <div class="value">{{ product.id }}</div>
+    </div>
+    <div class="param-line">
+      <div class="label">名前</div>
+      <div class="value">{{ product.name }}</div>
+    </div>
+    <div class="param-line">
+      <div class="label">価格</div>
+      <div class="value">{{ product.price }}</div>
+    </div>
+    <div class="param-line">
+      <div class="label">説明</div>
+      <div class="value">{{ product.description }}</div>
+    </div>
+  </div>
+  <div class="footer">
+    <div class="button black" routerLink="/products">商品一覧へ</div>
+  </div>
+</div>
+
+Aungular CLIのコンポーネントの作成で、作成されたファイルに、最初からngOnInit()というメソッドがありました。
+
+Angularのコンポーネントには、ライフサイクルをイベントフックが用意されています。
+コンポーネントができてからなくなるまでのイベントがいくつか用意されていてTypescriptのメソッド名が決まっているという事。
+例えば、コンポーネントができたときに実行したい処理、コンポーネントが描画されたら実行したい処理などの処理を各メソッドをうまく使って表示の調整をしたりできます。
+
+その中でも最も利用するのがngOnInit()です。ng = An[gu]larなので　ng + OnInit　つまり、初期化後に呼び出されるメソッドになる。
+
+if文の書き方
+*ngIfをつかう
+例
+*ngIf="products === null; else productList"
+
+elseの部分は<ng-template>を使う。
+<ng-template #productList>
+</ng-template>
+
+for文の書き方
+*ngForを使う。
+例
+*ngFor="let product of products"
+
+switchも使うことができる
+[ngSwitch]=""
+
+
+「Typescriptの基礎」
+
+型の指定
+
+export class Test {
+	name: string;  // ←これがインスタンス変数
+
+	toString(input: string): string {　// ←これがインスタンスメソッド
+		return input;
+	}
+}
+
+・変数定義は　変数名：　型
+・メソッド定義は　メソッド名(引数名: 引数名の型): メソッドの型 { メソッドの内容 }
+
+と書く必要がある。
+
+「型の種類」
+
+Typescriptで要されている型として、よく使われるもの
+
+・ string:文字列
+・ number:数値
+・ boolean:真偽値
+・ void:何も返さないメソッドの型
+
+配列の場合はstring[]のように型の後ろに[]をつけることで表現する。
+
+names: string[]
+
+また、なんでも良いという型の[any]がある。
+
+「Interface」
+Typescriptには、Interfaceがある。
+これは、JavaなどのようにClassに継承するInterfaceとしても使えるが、もう一つの使い方としてメソッドの引数などが複雑なときに利用することが多く、ObjectのKeyなどに規制をもたせることができる。
+
+例
+export insterface TestInterface {
+	name: string;
+	price: number;
+	description?: string;
+}
+
+というInterfaceがあり、
+
+testMethod(input: TestInterface): void {
+	...
+}
+
+というTestInterfaceを引数にとるメソッドがあるとして
+
+interfaceを使うことによって、少し複雑な引数に対して制約を持たすことができる。
+上記のコードの場合、nameとpriceは必須で、descriptionには?がついているので、これはoptional(あってもなくてもいい)という意味になる。
+
+this.testMethod({name: 'test'});
+
+と実行するとpriceが存在しないためエラーが発生する。
+
+また、下記のように存在しない要素を追加してもエラーが出ます。
+
+this.testMethod({ name: 'test', price: 100, extend: 'feawfeaw' });
+
+「Enum」
+また、よく使われるのがEnumです。
+これは、ある変数が決まった値しかとらないときに使う。
+例えば、ステータスとして、非公開(unpublished),公開(published)があり、それ以外の値をとらない変数があるような場合
+
+export enum States{
+	unpublished = 'unpublished',
+	published = 'published'
+}
+
+と記載する。
+もし数値しか取らないで、非公開(0)、公開(1)であったとすれば、下記のように記載する。
+
+export enum Status {
+	unpublished,
+	published
+}
+
+何も指定しなければ、上から順に０から割り当てられる。
+
+使う側は
+
+export class TestClass {
+	status: Status;
+}
+
+というように記載する。
+これによりstatusにはStatusで定義した値しか入らないようになる。
+
+Enumを含めた型による制約の注意事項
+string , number などの変数での型指定、 Enumによる値の制約、これらは、静的な解析時にのみ有効です。
+そのため、動的に 別の型の値を入れられたとしても、その時点でエラーを起こしてくれたりはしません。（Javaなどとは違う)
+
+これは、実行時には Javascript として実行されるため、Typescriptの恩恵は受けられないからです。例えばAPIで 本来は string を想定していたのに number が入っていたとして、
+それを代入してもエラーになったりはしません。
+
+型の制約は強力ですが、そのような場合もあるため、あまり頼りすぎて思考を停止しないように気をつけましょう。
+
+
+Typescriptにはprivate protected, publicと変数やメソッドのスコープを指定する装飾子が用意されてる。
+
+例
+export class Test {
+  private name: string;
+
+  protected testMethod(): string {
+    ...
+  }
+}
+
+何も指定してなければpublicとなる。
+
+「Angularでのデータ管理の基礎2」
+
+Angularでは、APIアクセスやコンポーネントをまたがるデータの管理などをServiceクラスを使って行うことができる。
+
+サービスクラスの作成
+
+ng g service ディレクトリ/サービス名
+
+import { Injectable } from '@angular/core';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class ProductService {
+
+  constructor() { }
+}
+@Injextableというのは、サービスクラスに指定するおまじない
+中に { providedIn: 'root' }が入っているがこれはrootレベルでこのサービスを利用するということになる。
+
+サービスクラスは指定したprovidedInの単位でインスタンス化され（今回の場合rootレベル）、一つのインスタンスが使いまわされる。
+シングルトンに近い状態。
+
+これにProductのリストを取得するメソッドを追加する。
+
+import { Injectable } from '@angular/core';
+import { Product } from '../models/product';
+import { Observable, of } from 'rxjs/index';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class ProductService {
+  products = [
+    new Product(1, 'Angular入門書「天地創造の章」', 3800, '神は云った。「Angularあれ」。するとAngularが出来た。'),
+    new Product(2, 'Angularを覚えたら、年収も上がって、女の子にももてて、人生が変わりました！', 410, '年収300万のSEが、Angularと出会う。それは、小さな会社の社畜が始めた、最初の抵抗だった。'),
+    new Product(3, '異世界転生から始めるAngular生活(1)', 680,
+      'スパゲッティの沼でデスマーチ真っ最中の田中。過酷な日々からの現実逃避か彼は、異世界に放り出され、そこでAngularの入門書を拾う。現実逃避でさえ、プログラミングをするしかない彼に待ち受けるのは！？'),
+  ];
+
+  constructor() { }
+
+  list(): Observable<Product[]> {
+    return of(this.products);
+  }
+}
+
+list()メソッドを追加した。型はObservable<Product[]>を指定している。
+現段階ではAPI通信を行っていないので同期処理になるが、最終的にはAPI通信を行うのでlist()メソッドは非同期処理になる。
+
+Angularでは、非同期処理にはRxJSを利用する。ObservableというのはRxJSのクラスで、非同期処理におけるメインのクラスになります。
+
+of
+
+というのもRxJSのメソッドで、これは与えられた内容でObservableを作るというもの
+
+つまり上記のコードはObservable（観測可能）なProductの配列を返すメソッドになっている。
+
+「product-list.component.tsの変更」
+
+product-list.component.ts
+
+import { Component, OnInit } from '@angular/core';
+import { Product } from '../../shared/models/product';
+import { ProductService } from '../../shared/services/product.service';
+
+@Component({
+  selector: 'app-product-list',
+  templateUrl: './product-list.component.html',
+  styleUrls: ['./product-list.component.scss']
+})
+export class ProductListComponent implements OnInit {
+  products: Product[] = null;
+
+  constructor(
+    private productService: ProductService,
+  ) {}
+
+  ngOnInit() {
+    this.productService.list().subscribe((products: Product[]) => {
+      this.products = products;
+    });
+  }
+}
+
+元々はngOnInitないでProductの配列を作成していたが、ProductServiceを利用するようになった。
+
+constructorの解説
+
+constructorでProductServiceの引く数を呼んでいる。
+Angularではこの記述によりProductServiceをコンポーネントやサービスに挿入できる。
+つまりこの記述でProductListComponentにproductServiceという変数が生成されたことになる。
+
+ngOnInitの解説
+
+this.productService.list()は、Obserbable<Product[]>を返す。
+先ほど記述した通り、これはObservable（観測可能）なProductの配列を返します。
+
+subscribeは、Observableのメソッドで対象のObservableの観測を開始するものです。
+（APIアクセスの非同期処理を開始）。
+
+観測が完了すると、subscribeの引数のコールバックメソッドが呼ばれる。
+この引数にはObservabl<Prpduct[]>にProduct[]が入ることになる。
+
+そのため、ProductServiceのlist()メソッドで返した配列がこのメソッドに入る。
+
+つまり
+
+this.productService.list().subscribe((products: Product[]) => {
+
+のproductsに入っているという事になります。
+
+このメソッドの中で
+
+this.products = products;
+
+としてインスタンス変数に代入しています。
+これにより、pruduct-list-component.tsのproductsを表示するように記述しているViewに反映される。
+
+「product-detail.component.tsからProductServiceの利用」
+
+
+ProductSeviceにidで商品が取得できるメソッドを追加する。
+
+import { Injectable } from '@angular/core';
+import { Product } from '../models/product';
+import { Observable, of } from 'rxjs/index';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class ProductService {
+
+  products = [
+    new Product(1, 'Angular入門書「天地創造の章」', 3800, '神は云った。「Angularあれ」。するとAngularが出来た。'),
+    new Product(2, 'Angularを覚えたら、年収も上がって、女の子にももてて、人生が変わりました！', 410, '年収300万のSEが、Angularと出会う。それは、小さな会社の社畜が始めた、最初の抵抗だった。'),
+    new Product(3, '異世界転生から始めるAngular生活(1)', 680,
+      'スパゲッティの沼でデスマーチ真っ最中の田中。過酷な日々からの現実逃避か彼は、異世界に放り出され、そこでAngularの入門書を拾う。現実逃避でさえ、プログラミングをするしかない彼に待ち受けるのは！？'),
+  ];
+  constructor() { }
+
+  list(): Observable<Product[]> {
+  	return of (this.products);
+  }
+
+  get(id: number): Observable<Product> {
+  	return of( this.products[id - 1]);
+  }
+}
+
+「HTMLフォーム要素とTypescriptの連携」
+HTMLのフォーム要素である、<input>,<select>などの要素は、
+画面での入力が内部のTypescriptのコードに反映してほしかったり、逆にTypescriptのコードで計算した値を入れたいような場合があります。
+そのような場合にAnguarでは、[{ngModel}]という要素を使います。
+
+[(ngModel)]は、双方向バインティングというもので、TypescriptからHTMLへバインドと、HTMLからTypescriptへのバインド双方向でデータが同期される仕組みです。
+
+ちなみに、今まで何度か出てきた[property]のように[]で囲むのは、TypescriptからHTMLへバインド
+
+（click）のように（）で囲むのがHTMLTypescriptへのバインドになります。[(ngModel)]はどちらからも囲まれているので双方向ということ
+
+「編集用のページの作成」
+
+ng g component product/product-edit
+
+[(ngModel)]を使ってデータを反映する
+
+編集画面では、データAPIで取得し、そのデータを編集したいという場合が多い
+
+この場合、画面を初めて開いたときにAPIで取得したデータが入っていることが望ましい
+
+また、このときブラウザ上でユーザーが編集したデータをそのままAPIで登録する場合も多い
+
+このような場合は双方向バインディングが適している。
+
+ngModelを使う際の注意
+Angularではモジュールに登録されていない機能はプロジェクトに認識されない為使用できない。
+
+エラーに遭遇した場合は
+ https://angular.io
+にてそのモジュールを検索し、app.module.tsでimportし、discriputionsに追記して使わなければならない。
+
+
+「クリックイベントで保存処理」
+
+クリックイベントは(click)で定義できる。
+
+	<div class="footer">
+		<div class="button black" (click)="saveProduct()">保存</div>
+	</div>
+
+product-edit.component.ts
+
+import { Component, OnInit } from '@angular/core';
+import { Product } from '../../shared/models/product';
+import { ProductService } from '../../shared/services/product.service';
+import { Router } from '@angular/router';
+@Component({
+  selector: 'app-product-edit',
+  templateUrl: './product-edit.component.html',
+  styleUrls: ['./product-edit.component.scss']
+})
+export class ProductEditComponent implements OnInit {
+
+  product: Product;
+
+  constructor(
+  	  private productService: ProductService,
+  	  private router: Router,
+  	) { }
+
+  ngOnInit() {
+  	this.productService.get(2).subscribe((product: Product) => {
+  		this.product = product;
+  	});
+  };
+
+  saveProduct(): void {
+  	console.log(this.product);
+  	this.router.navigate(['/products']);
+  }
+}
+
+TypescriptへsaveProductメソッドを作りました。
+HTMLで(click)="saveProduct()"と定義し要素がクリックされるとsaveProductメソッドを呼び出すという形になっている。
+
+さらにTypescript内にRouterをimportしconstructorないでrouterを定義して、routerを使用できるようになっている。
+
+this.router.navigateのnavigateメソッドはHTMLで記載していたrouteLinkと同じような動きをしてくれる。
+
+Routerのほかの機能については
+https://angular.io/api/router/Router
+を参照
+
+[ngSubmit]を利用したフォーム
+Form要素が持てるディレクティブで上記のTypescriptをngSubmitに改造すると下記のようになる
+
+<div class="container">
+  <div class="title">商品編集</div>
+  <form (ngSubmit)="saveProduct()">
+    <div class="edit-form">
+      <div class="edit-line">
+        <label>ID</label>
+        <span>{{ product.id }}</span>
+      </div>
+      <div class="edit-line">
+        <label>名前</label>
+        <input type="text" name="name" [(ngModel)]="product.name">
+      </div>
+      <div class="edit-line">
+        <label>価格</label>
+        <input type="number" name="price" [(ngModel)]="product.price">
+      </div>
+      <div class="edit-line">
+        <label>説明</label>
+        <input type="text" name="description" [(ngModel)]="product.description">
+      </div>
+    </div>
+    <div class="footer">
+      <button class="button black">保存</button>
+    </div>
+  </form>
+</div>
+
+「リスト表示で詳細、編集画面への遷移を追加」
+リンクにマウスがホバーするとリンクが出て外れた時には消える処理を追加していく
+
+まずはマウスがホバーした時と外れた時のイベントを作る。
+
+product-list.component.ts
+
+hovered(product: Product): void {}
+unhovered(product: Product): void {}
+
+HTML上にmouseenter, mouseleaveのイベントを取得して、追加したメソッドを呼ぶようにする。
+
+product-list.component.html
+<div class="product-line" *ngFor="let product of products" (mouseenter)="hovered(product)" (mouseleave)="unhovered(product)">
+  <div class="product-id">{{ product.id }} </div>
+  <div class="product-name">{{ product.name }}</div>
+  <div class="product-price">{{ product.price }}</div>
+</div>
+
+次にホバー状態を保存できるようにする。
+今回はProductという入れ物がホバーされたかされていないかというboolean型の要素を持って判断することにする。
+
+class ProductListElement extends Product {
+  hovered: boolean;
+}
+
+これでProductの要素にhoveredという要素を追加できた。
+実際に使うと下記のようになる
+
+product-list.component.ts
+
+import { Component, OnInit } from '@angular/core';
+import { Product } from '../../shared/models/product';
+import { ProductService } from '../../shared/services/product.service';
+
+class ProductListElement extends Product { // <= 追加
+  hovered: boolean;
+}
+
+@Component({
+  selector: 'app-product-list',
+  templateUrl: './product-list.component.html',
+  styleUrls: ['./product-list.component.scss']
+})
+export class ProductListComponent implements OnInit {
+  products: ProductListElement[] = null;
+
+  constructor(
+    private productService: ProductService,
+  ) {}
+
+  ngOnInit() {
+    this.productService.list().subscribe((products: Product[]) => {
+      this.products = products.map((product: Product) => {
+        return { // <= 変更
+          ... product,
+          hovered: false,
+        };
+      });
+    });
+  }
+
+  hovered(product: ProductListElement): void { product.hovered = true; } // <= 変更
+  unhovered(product: ProductListElement): void { product.hovered = false; } // <= 変更
+}
+
+ngOnInit内のProductはProductListComponentを使っていないのでhoveredが使えない為、追記している。
+
+ Typescript の特殊な書き方で、 ... は Spread Operator と呼ばれています（公式に名前がないので正確な名前はわかりません）。
+ Spread Operator について、詳しくは公式ページを参照してください。
+https://www.typescriptlang.org/docs/handbook/release-notes/typescript-2-1.html
+
+「保存したホバー状態を使って、ホバーされているときは詳細画面への遷移ボタンを出るようにする。」
+
+<div class="product-price">
+	<span *ngIf="!product.hovered; else Unhovered">{{ product.price }}</span>
+	<ng-template #Unhovered><span class="button white" [routerLink]="[product.id]">詳細</span></ng-template>
+</div>
+
+「詳細画面、編集画面で、URLのパラメータでどの商品か判断できるようにする。」
+
+Angularでは、URLの情報取得にActivatedRouterを利用する。
+
+import { ActivatedRoute, Params } from '@angular/router';
+
+constructor(
+    private route: ActivatedRoute, // <= 追加
+    private productService: ProductService,
+  ) {}
+
+ngOnInit() {
+    this.route.params.subscribe((params: Params) => { // <= 変更
+      this.productService.get(params['id']).subscribe((product: Product) => {
+        this.product = product;
+      });
+    });
+  }
+
+ActivatedRouteの使い方
+
+ActivatedRoute から取得できるURLの要素の代表的なものは、 params と queryParams です。
+
+変数     	型	　　    役割
+params      Observable	Routeで設定しているパラメータを取得する
+queryParams Observable	Routeで設定していないURLクエリを取得する
+
+
+「Angularのフォーム」
+AngularではFormに対する関連づけの処理を専用で行うためのクラスが用意されている
+
+FormControl <input>などの入力要素一つに対するクラス
+FormGroup   <form>要素に対するクラス
+FormBuilder FormGroup, FormControlを作成するクラス
+
+
+「AngularのAPI通信」
+
+app.module.ts
+
+import { HttpClientModule } from '@angular/common/http';
+
+imports: [
+	.....
+	.....
+	HttpClientModule, <=追加
+]
+
+GET時の処理
+情報受け取りに使っているTSファイル(product.service.ts)
+
+import { HttpClient } from '@angular/common/http';
+import { map } from 'rxjs/poerators';
+
+......
+......
+
+private httpOptions: any = {
+    headers: new HttpHeaders({
+      'Content-Type': 'application/json'
+    }),
+    body: null,
+  };
+
+constructor(
+	private http: HttpClient,
+) {}
+
+list(): Obsevable<Product[]> {
+	return this.http.get('APIURL', this.httpOprions).pipe(
+		map((response: any) =>
+			Object.keys(response).map((key: string) => {
+				const prd = response[key];
+				return new Product(prd.id, prd.name , prd.price, prd. description);
+			})
+		)
+	);
+}
+
+トークンをつけたい場合
+
+TOKEN = 'TOKEN';
+
+.......
+.......
+
+list(): Obsevable<Product[]> {
+	return this.http.get('APIURL', {param: {auth: this,TOKEN }}, this.httpOprions).pipe(
+		map((response: any) =>
+			Object.keys(response).map((key: string) => {
+				const prd = response[key];
+				return new Product(prd.id, prd.name , prd.price, prd. description);
+			})
+		)
+	);
+}
+
+list()の処理の流れはAPIアクセスを行いAPIのレスポンスをProductの配列にするという処理を行っている。
+
+{ params: { auth: this.TOKEN } }
+
+はhttp.get()メソッドのオプションでparamsは、ここで指定したオブジェクトをクリエパラメータに変換してリクエストしてくれる。
+
+http.get()はObservableを返す。
+Observableで、返り値を変換して再度Observableとして返したい場合は
+
+<observable>.pipe(
+	map( <observable>の返却値 => 変換したい値 )
+)
+
+とする。
+
+pipeというObservableのメソッドは、Observableに対してObservableのoperatorを渡すのをパイプするというメソッド
+配列を受け取るので
+
+<observable>.pipe(
+	map( <observable>の返却値　=> 変換したい値 ),
+	map( 上のmapの返却値 => さらに変換したい値 )
+)
+
+のようにoperatorをつなげていくことができる。
+
+pipeはただつなぐだけのメソッドなのでmapというopetatorがObservableを配列をmapメソッドのように変換するものになる。
+
+レスポンスの変換については下記の部分で変換している
+Object.keys(reponse).map((key: string) => {
+	const prd = response[key];
+	return new Product(prd.id, prd.name, prd.price, prd.description);
+})
+
+
+get id: の場合
+
+get(id: number): Observable<Product> {
+	return this.http.get(`apiURL/${id}`, OPTION).pipe(
+		map((response: any) => {
+			return new Product(id, product.name, product.price, pruduct.description);
+		})
+	);
+}
+
+「CREATE,UPDATE,DELETE処理」
+
+create(product: Product): Observable<void> {
+	return this.http.post('APIURL', product(パラメータ), OPTION).pipe(
+		map(() => {}),
+	);
+}
+
+update(product: Product): Observable<void> {
+	return this.http.pacth('APIURL/${product.id}',{
+			id: product.id,
+			name: product.name,
+			price: product.price,
+			description: product.description
+		}, OPTION).pipe(
+			map(() =>{}),
+		);
+}
+
+delete(id: number): Observable<void> {
+	return this.http.delete(`APIURL/${id}`, OPTION).pipe(
+		map(() => {})
+	);
+}
+
+
+「バリデーションについて」
+
+対象.ts
+
+get name() { return this.productForm.get('name'); }_
+
+Typescript側は上記を追加
+これは,gettetです。getterはメソッドなのですが、メソッドでないときのように()なしで呼び出すことができます。
+そのためHTMLから読んでいるときは、nameだけで呼べています。
+
+このproductForm.get('name')で取得できるのはFormControlクラスのインスタンスです。
+
+html側
+
+<input id="name" type="text" formControlName="name" required>
+name の<input>に対してrequiredという属性を追加しました。
+これにより、この項目が必須である(required)というバリデーションが効くようになる。
+
+<div *ngIf="name.invalid && (name.dirty || name.touched)" class="alert">
+
+name.invalidは、nameのバリデーションに一つでも違反したらtrueになる。
+
+name.dirtyは、name要素が変更されたらtrueになる。
+
+name.touchedは、name要素の入っている<input>のblurイベント発火時にtrueになる。（一度<input>タグにフォーカスをあてて、離れたら）
+
+これたの３つを用いて、<div>は、nameに何も入力されていない状態になり、かつユーザーが入力内容に変更を加えたか、一度フォーカスを入れてはなれたときに内容が表示されるようになります。
+
+この name.dirty || name.touched　をなぜ使うかというと、もしこれらがなければ、登録フォームの一番最初のまだ何も入力していない時点からエラーが表示されることになり、ユーザーにとって不快な情報を表示してしまうからです。
+
+他のバリデーションも追加する
+<input id="name" type="text" formControlName="name" required maxlength="50">
+<div *ngIf="name.errors.maxlength"></div>
+<div> *ngIf="price.errors.min"</div>
+
+ts
+
+export class ProductEditComponent implements OnInit {
+	productForm = this.fb.group({
+		id: [''],
+		price['', validators.min(100)],
+		description[''],
+	});
+	.....
+}
+
+HTML5のinputバリデーションが定義されていないものに関してはTypescript側でバリデーションを設定する必要がある。
+
+Angularがデフォルトで用意しているバリデーションはValidatorsに定義されています。
+
+
+バリデーションにエラーがある時に保存できなくする
+
+ts
+
+saveProduct(): void {
+	if (this.productForm.valid) {
+		const { id, name, price, description } = this.producrtForm.getRawValue();
+		this.productSerivece.update(new Product(id, name, price, description));
+		this.router.navigate(['/products', this.productForm.controls.id.value]);
+	}
+}
+
+HTML
+<button class="button black" [class.disabled]="productForm.invalid">保存</buttoun>
+
+[class.xxx]="someting"のsomethingの部分がtrueを返すと、この要素にxxxというclassが追加されるという意味
+
+上記はproductForm.invalidがtrueだとdisabled classが付与されるようにした。
+
+disabled classは、scssに追加する。
+
+&.disabled {
+  background-color: #B0BEC5;
+  pointer-events: none;
+}
+
+
+「カスタムバリデーションを作る。」
+あるカラムに指定した文字列が入っているとエラーになるというものを作る。
+
+任意のディレクトリにvalidation用のTypescriptファイルを作成する。
+
+import { AbstractControl, ValidatorFn } from '@angular/forms';
+
+export function forbiddenWordValidator(word: string): ValidatorFn {
+	return (control: AbstractControl): {[key: string]: any} | null =>{
+		const forbidden = control.value.includes(word);
+		return forbidden ? {'forbiddenWord': {value: control.value}}: null;
+	}
+}
